@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serviços Técnicos</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f3f5f8;
+            color: #1f2937;
+        }
+        header {
+            background: #1f4f82;
+            color: white;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        header h1 { margin: 0; font-size: 20px; }
+        main { max-width: 1050px; margin: 24px auto; padding: 0 16px; }
+        section {
+            background: white;
+            border: 1px solid #d9dee7;
+            border-radius: 8px;
+            padding: 18px;
+            margin-bottom: 16px;
+        }
+        h2 { margin: 0 0 12px; font-size: 18px; }
+        label { display: block; margin: 10px 0 5px; font-weight: 700; }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font: inherit;
+        }
+        textarea { min-height: 90px; resize: vertical; }
+        button {
+            border: 0;
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin-top: 10px;
+            cursor: pointer;
+            background: #1f4f82;
+            color: white;
+            font-weight: 700;
+        }
+        button.secundario { background: #64748b; }
+        button.perigo { background: #b91c1c; }
+        button.sucesso { background: #15803d; }
+        button.pequeno { padding: 7px 10px; font-size: 13px; margin-right: 6px; }
+        .linha { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+        .acoes { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .oculto { display: none; }
+        .mensagem { min-height: 22px; color: #475569; }
+        .erro { color: #b91c1c; }
+        .ok { color: #15803d; }
+        .card {
+            border: 1px solid #d9dee7;
+            border-left: 4px solid #94a3b8;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 10px;
+            background: #fff;
+        }
+        .card strong { display: block; margin-bottom: 6px; }
+        .meta { color: #64748b; font-size: 13px; margin: 3px 0; }
+        .PENDENTE { border-left-color: #b7791f; }
+        .EM_ATENDIMENTO { border-left-color: #04748c; }
+        .CONCLUIDA { border-left-color: #15803d; }
+        .REJEITADA { border-left-color: #b91c1c; }
+        .atalhos button { background: #e2e8f0; color: #1f2937; margin-right: 6px; }
+        @media (max-width: 720px) { .linha { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Serviços Técnicos</h1>
+    <div class="acoes">
+        <span id="usuarioLogado">Não logado</span>
+        <button class="pequeno secundario" onclick="sair()">Sair</button>
+    </div>
+</header>
+
+<main>
+    <section id="loginArea">
+        <h2>Login</h2>
+        <div class="atalhos">
+            <button onclick="preencherLogin('admin')">admin</button>
+            <button onclick="preencherLogin('comum')">comum</button>
+            <button onclick="preencherLogin('tecnico1')">tecnico1</button>
+        </div>
+        <div class="linha">
+            <div>
+                <label for="login">Usuário</label>
+                <input id="login" value="admin">
+            </div>
+            <div>
+                <label for="senha">Senha</label>
+                <input id="senha" type="password" value="123">
+            </div>
+        </div>
+        <button onclick="entrar()">Entrar</button>
+        <p id="msgLogin" class="mensagem"></p>
+    </section>
+
+    <section id="clienteArea" class="oculto">
+        <h2>Abrir chamado</h2>
+        <label for="itemCatalogo">Serviço</label>
+        <select id="itemCatalogo">
+            <option value="1">Infraestrutura: Servidor vSphere</option>
+            <option value="2">Acessos: VPN Corporativa</option>
+            <option value="3">Hardware: Manutenção de Ativos</option>
+        </select>
+        <label for="descricao">Descrição</label>
+        <textarea id="descricao" placeholder="Descreva o problema ou solicitação"></textarea>
+        <button onclick="abrirChamado()">Enviar chamado</button>
+        <p id="msgChamado" class="mensagem"></p>
+    </section>
+
+    <section id="adminArea" class="oculto">
+        <h2>Administração</h2>
+        <div class="linha">
+            <div>
+                <h3>Técnicos</h3>
+                <label for="tecnicoNome">Nome</label>
+                <input id="tecnicoNome" placeholder="Nome do técnico">
+                <label for="tecnicoLogin">Login</label>
+                <input id="tecnicoLogin" placeholder="tecnico3">
+                <label for="tecnicoSenha">Senha</label>
+                <input id="tecnicoSenha" type="password" placeholder="123">
+                <button onclick="salvarTecnico()">Salvar técnico</button>
+                <div id="tecnicos"></div>
+            </div>
+            <div>
+                <h3>Chamados</h3>
+                <label for="filtroStatus">Filtro</label>
+                <select id="filtroStatus" onchange="listarChamados()">
+                    <option value="">Todos</option>
+                    <option value="PENDENTE">Pendentes</option>
+                    <option value="EM_ATENDIMENTO">Em atendimento</option>
+                    <option value="CONCLUIDA">Concluídos</option>
+                    <option value="REJEITADA">Rejeitados</option>
+                </select>
+                <button class="secundario" onclick="carregarAdmin()">Atualizar</button>
+                <div id="chamadosAdmin"></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="tecnicoArea" class="oculto">
+        <h2>Meus chamados</h2>
+        <button class="secundario" onclick="listarMeusChamados()">Atualizar</button>
+        <div id="chamadosTecnico"></div>
+    </section>
+</main>
+
+<script>
+    let token = '';
+    let usuario = '';
+    let perfis = [];
+    let tecnicos = [];
+    let tecnicoEditando = null;
+
+    const acessos = {
+        admin: ['admin', '123'],
+        comum: ['comum', '123'],
+        tecnico1: ['tecnico1', '123']
+    };
+
+    function preencherLogin(tipo) {
+        document.getElementById('login').value = acessos[tipo][0];
+        document.getElementById('senha').value = acessos[tipo][1];
+    }
+
+    async function entrar() {
+        const dados = new URLSearchParams();
+        dados.append('usuario', document.getElementById('login').value);
+        dados.append('senha', document.getElementById('senha').value);
+
+        const resposta = await fetch('/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: dados
+        });
+
+        if (!resposta.ok) {
+            mostrarMensagem('msgLogin', 'Login inválido.', true);
+            return;
+        }
+
+        token = await resposta.text();
+        const payload = lerToken(token);
+        usuario = payload.upn;
+        perfis = payload.groups || [];
+        document.getElementById('usuarioLogado').innerText = payload.nome || usuario;
+        document.getElementById('loginArea').classList.add('oculto');
+        mostrarAreas();
+    }
+
+    function lerToken(jwt) {
+        const base64 = jwt.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+        const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+        return JSON.parse(new TextDecoder('utf-8').decode(bytes));
+    }
+
+    function temPerfil(perfil) {
+        return perfis.includes(perfil);
+    }
+
+    function mostrarAreas() {
+        document.getElementById('clienteArea').classList.toggle('oculto', !temPerfil('Usuario') && !temPerfil('Admin'));
+        document.getElementById('adminArea').classList.toggle('oculto', !temPerfil('Admin'));
+        document.getElementById('tecnicoArea').classList.toggle('oculto', !temPerfil('Tecnico'));
+        if (temPerfil('Admin')) carregarAdmin();
+        if (temPerfil('Tecnico')) listarMeusChamados();
+    }
+
+    function sair() {
+        token = '';
+        usuario = '';
+        perfis = [];
+        document.getElementById('usuarioLogado').innerText = 'Não logado';
+        document.getElementById('loginArea').classList.remove('oculto');
+        document.getElementById('clienteArea').classList.add('oculto');
+        document.getElementById('adminArea').classList.add('oculto');
+        document.getElementById('tecnicoArea').classList.add('oculto');
+    }
+
+    async function abrirChamado() {
+        const descricao = document.getElementById('descricao').value.trim();
+        if (!descricao) {
+            mostrarMensagem('msgChamado', 'Informe a descrição.', true);
+            return;
+        }
+
+        const resposta = await api('/solicitacoes', 'POST', {
+            idItemCatalogo: Number(document.getElementById('itemCatalogo').value),
+            descricao
+        });
+
+        if (resposta.ok) {
+            document.getElementById('descricao').value = '';
+            mostrarMensagem('msgChamado', 'Chamado aberto com sucesso.');
+            if (temPerfil('Admin')) listarChamados();
+        } else {
+            mostrarMensagem('msgChamado', await resposta.text(), true);
+        }
+    }
+
+    async function carregarAdmin() {
+        await listarTecnicos();
+        await listarChamados();
+    }
+
+    async function listarTecnicos() {
+        const resposta = await api('/usuarios/tecnicos');
+        tecnicos = resposta.ok ? await resposta.json() : [];
+        document.getElementById('tecnicos').innerHTML = tecnicos.map(t => `
+            <div class="card">
+                <strong>${esc(t.nome)}</strong>
+                <div class="meta">Login: ${esc(t.login)}</div>
+                <button class="pequeno secundario" onclick="editarTecnico(${t.id})">Editar</button>
+                <button class="pequeno perigo" onclick="excluirTecnico(${t.id})">Excluir</button>
+            </div>
+        `).join('');
+    }
+
+    async function salvarTecnico() {
+        const corpo = {
+            nome: document.getElementById('tecnicoNome').value,
+            login: document.getElementById('tecnicoLogin').value,
+            senha: document.getElementById('tecnicoSenha').value
+        };
+        const url = tecnicoEditando ? `/usuarios/tecnicos/${tecnicoEditando}` : '/usuarios/tecnicos';
+        const metodo = tecnicoEditando ? 'PUT' : 'POST';
+        const resposta = await api(url, metodo, corpo);
+        if (!resposta.ok) return alert(await resposta.text());
+        tecnicoEditando = null;
+        document.getElementById('tecnicoNome').value = '';
+        document.getElementById('tecnicoLogin').value = '';
+        document.getElementById('tecnicoSenha').value = '';
+        carregarAdmin();
+    }
+
+    function editarTecnico(id) {
+        const tecnico = tecnicos.find(t => t.id === id);
+        if (!tecnico) return;
+        tecnicoEditando = id;
+        document.getElementById('tecnicoNome').value = tecnico.nome;
+        document.getElementById('tecnicoLogin').value = tecnico.login;
+        document.getElementById('tecnicoSenha').value = '';
+    }
+
+    async function excluirTecnico(id) {
+        if (!confirm('Excluir este técnico?')) return;
+        const resposta = await api(`/usuarios/tecnicos/${id}`, 'DELETE');
+        if (!resposta.ok) return alert(await resposta.text());
+        carregarAdmin();
+    }
+
+    async function listarChamados() {
+        const status = document.getElementById('filtroStatus').value;
+        const url = status ? `/solicitacoes?page=0&size=20&status=${status}` : '/solicitacoes?page=0&size=20';
+        const resposta = await api(url);
+        const dados = resposta.ok ? await resposta.json() : { itens: [] };
+        document.getElementById('chamadosAdmin').innerHTML = dados.itens.map(c => cardChamado(c, true)).join('') || '<p>Nenhum chamado.</p>';
+    }
+
+    async function listarMeusChamados() {
+        const resposta = await api('/solicitacoes/minhas?page=0&size=20');
+        const dados = resposta.ok ? await resposta.json() : { itens: [] };
+        document.getElementById('chamadosTecnico').innerHTML = dados.itens.map(c => cardChamado(c, false)).join('') || '<p>Nenhum chamado.</p>';
+    }
+
+    function cardChamado(chamado, admin) {
+        return `
+            <div class="card ${chamado.status}">
+                <strong>${idChamado(chamado.id)} - ${esc(chamado.descricao)}</strong>
+                <div class="meta">Status: ${status(chamado.status)}</div>
+                <div class="meta">Solicitante: ${esc(chamado.nomeUsuario || '-')}</div>
+                <div class="meta">Técnico: ${esc(chamado.tecnicoResponsavel || '-')}</div>
+                ${chamado.motivoRejeicao ? `<div class="meta">Motivo: ${esc(chamado.motivoRejeicao)}</div>` : ''}
+                ${chamado.descricaoConclusao ? `<div class="meta">Conclusão: ${esc(chamado.descricaoConclusao)}</div>` : ''}
+                <div class="acoes">${acoesChamado(chamado, admin)}</div>
+            </div>
+        `;
+    }
+
+    function acoesChamado(chamado, admin) {
+        if (admin && chamado.status === 'PENDENTE') {
+            const opcoes = tecnicos.map(t => `<option value="${esc(t.login)}">${esc(t.nome)}</option>`).join('');
+            return `
+                <select id="tecnico-${chamado.id}"><option value="">Técnico</option>${opcoes}</select>
+                <button class="pequeno sucesso" onclick="atribuir(${chamado.id})">Designar</button>
+                <button class="pequeno perigo" onclick="rejeitar(${chamado.id})">Rejeitar</button>
+            `;
+        }
+        if (chamado.status === 'EM_ATENDIMENTO' && (admin || chamado.tecnicoResponsavel === usuario)) {
+            return `<button class="pequeno sucesso" onclick="concluir(${chamado.id})">Concluir</button>`;
+        }
+        return '';
+    }
+
+    async function atribuir(id) {
+        const tecnicoLogin = document.getElementById(`tecnico-${id}`).value;
+        if (!tecnicoLogin) return alert('Selecione um técnico.');
+        const resposta = await api(`/solicitacoes/${id}/atribuir`, 'PUT', { tecnicoLogin });
+        if (!resposta.ok) return alert(await resposta.text());
+        listarChamados();
+    }
+
+    async function rejeitar(id) {
+        const motivo = prompt('Motivo da rejeição:');
+        if (!motivo) return;
+        const resposta = await api(`/solicitacoes/${id}/rejeitar`, 'PUT', { motivo });
+        if (!resposta.ok) return alert(await resposta.text());
+        listarChamados();
+    }
+
+    async function concluir(id) {
+        const descricao = prompt('O que foi feito?');
+        if (!descricao) return;
+        const resposta = await api(`/solicitacoes/${id}/concluir`, 'PUT', { descricao });
+        if (!resposta.ok) return alert(await resposta.text());
+        if (temPerfil('Admin')) listarChamados();
+        if (temPerfil('Tecnico')) listarMeusChamados();
+    }
+
+    function api(url, metodo = 'GET', corpo = null) {
+        const config = { method: metodo, headers: { Authorization: 'Bearer ' + token } };
+        if (corpo) {
+            config.headers['Content-Type'] = 'application/json';
+            config.body = JSON.stringify(corpo);
+        }
+        return fetch(url, config);
+    }
+
+    function mostrarMensagem(id, texto, erro = false) {
+        const el = document.getElementById(id);
+        el.innerText = texto;
+        el.className = erro ? 'mensagem erro' : 'mensagem ok';
+    }
+
+    function idChamado(id) {
+        return '#' + String(id).padStart(4, '0');
+    }
+
+    function status(valor) {
+        const nomes = {
+            PENDENTE: 'Pendente',
+            EM_ATENDIMENTO: 'Em atendimento',
+            CONCLUIDA: 'Concluído',
+            REJEITADA: 'Rejeitado'
+        };
+        return nomes[valor] || valor;
+    }
+
+    function esc(valor) {
+        return String(valor ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
+    }
+</script>
+</body>
+</html>
